@@ -27,7 +27,7 @@ public class PlayerMovement : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void FixedUpdate () {
+	void Update () {
 		RaycastHit2D rayHitDown = Physics2D.Raycast (transform.position, Vector2.down);
 		RaycastHit2D rayHitLeft = Physics2D.Raycast (transform.position, Vector2.left);
 		RaycastHit2D rayHitRight = Physics2D.Raycast (transform.position, Vector2.right);
@@ -51,7 +51,7 @@ public class PlayerMovement : MonoBehaviour {
 			timer = 0;
 		}
 		if (Input.GetKeyDown("r")) {
-			ChangeLevel ();
+			StartCoroutine(ChangeLevel());
 		}
 		if (timer == 30) {
 			Scythe.transform.position = new Vector2 (1000, 1000);
@@ -61,7 +61,7 @@ public class PlayerMovement : MonoBehaviour {
 			vel.y += 0.3f;
 		}
 		vel.x *= 0.95f;
-		if (vel.y < -0.1f && rayHitDown.distance < Mathf.Abs(vel.y / 10) && rayHitDown.collider.tag != "Water" && rayHitDown.collider.tag != "LevelEnd" && rayHitDown.collider.tag != "Key") {
+		if (vel.y < -0.1f && rayHitDown.distance < Mathf.Abs(vel.y / 10) && rayHitDown.collider.tag != "Water" && rayHitDown.collider.tag != "LevelEnd" && rayHitDown.collider.tag != "Key" && rayHitDown.collider.tag != "Rubber") {
 			vel.y *= 0.1f;
 			transform.position -= new Vector3 (0, rayHitDown.distance - 0.45f, 0);
 		}
@@ -96,7 +96,7 @@ public class PlayerMovement : MonoBehaviour {
 			transform.Rotate (Vector3.forward * -90);
 		}
 		if (col.tag == "LevelEnd") {
-			ChangeLevel ();
+			StartCoroutine(ChangeLevel());
 		}
 
 		if (col.tag == "Enemy" || col.tag == "StageHazard") {
@@ -130,13 +130,17 @@ public class PlayerMovement : MonoBehaviour {
 			Destroy (gameObject);
 		}
 	}
-	void ChangeLevel() {
+	IEnumerator ChangeLevel() {
 		SceneManager.UnloadSceneAsync ("Stage" + currentLevel);
 		currentLevel++;
 		SceneManager.LoadSceneAsync ("Stage" + currentLevel, LoadSceneMode.Additive);
-		transform.position = GameObject.Find ("LevelStart").transform.position; // Loads LevelStart in current scene becuz reasons
-		cpPos = GameObject.Find ("LevelStart").transform.position;
+		yield return new WaitUntil (() => SceneManager.GetSceneByName("Stage" + currentLevel).isLoaded == true);
+		Vector3 levelStartTemp = GameObject.Find ("LevelStart").transform.position;
+		transform.position = levelStartTemp;
+		cpPos = levelStartTemp;
 		transform.rotation = new Quaternion (0, 0, 0, 0);
 		rb.angularVelocity = 0;
+		rb.velocity = new Vector2(0,0);
+		yield return null;
 	}
 }
